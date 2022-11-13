@@ -5,15 +5,28 @@
 %include "stdio.asm"
 
 %macro defString 1+
+.length:
 	dd %%endtext - %%starttext
+.data:
 	%%starttext: db %1
+.eof:
 	%%endtext: db 0
 %endmacro
+%macro getString 2+
+	[SECTION .data]
+		%%string:
+			dd %%endtext - %%starttext
+			%%starttext: db %2
+			%%endtext: db 0
+	__?SECT?__
+		mov %1, %%string
+%endmacro
 
+%define endl 0xd, 0xa
 section .data
-	db "-"
+	CONST_MINUS_SYM db "-"
 	CONST_NUMERICS defString{"0123456789ABCDEF"}
-	endl defString{0xd,0xa}
+	endls defString{0xd,0xa}
 
 section .text
 	snew:					;	Creates a new string and initializes its contents to the string stored in EAX. Stores the pointer to the new string in EAX. If EAX is null creates a string with capacity of 50 bytes.
@@ -86,7 +99,7 @@ section .text
 
 	sappend_endl:					;	Appends a new line to the string in EAX. EAX will contain the pointer to the string.
 			push edx
-			mov edx, endl
+			mov edx, endls
 			call sappend
 			pop edx
 			ret
@@ -119,7 +132,7 @@ section .text
 			xor edx, edx
 			div ecx
 
-			mov dl, byte [edx + CONST_NUMERICS]
+			mov dl, byte [edx + CONST_NUMERICS.data]
 			mov byte [esi], dl
 			inc edi
 			dec esi
@@ -129,7 +142,7 @@ section .text
 			pop edx
 			cmp edx, 0
 			jns .not_signed
-			mov al, byte [CONST_NUMERICS-1]
+			mov al, byte [CONST_MINUS_SYM]
 			mov byte [esi], al
 			dec esi
 			inc edi

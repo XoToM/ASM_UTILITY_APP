@@ -1,8 +1,13 @@
 %ifndef __STD
+
 %define __STD 1
 
-section .bss
-	heap resd 0
+%ifndef __STD_IO
+	%include "std.asm"
+%endif
+
+section .data
+	heap dd 0
 
 section .text
 	extern _ExitProcess@4
@@ -126,5 +131,18 @@ section .text
 			push eax
 			call _ExitProcess@4
 			ret
+	
+	
+	handleerror:				;	Prints the error code of the last error then closes this program with this error code.
+			call _GetLastError@0	;	Get the error code
+			push eax
+
+			mov eax, error_code_msg
+			call snew
+			mov edx, dword [esp]
+			call sappend_int
+			call cout				;	Print out an error message
+
+			call _ExitProcess@4		;	Exit with the error code
 
 %endif

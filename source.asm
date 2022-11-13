@@ -4,23 +4,17 @@ default rel
 %include "std_string.asm"
 
 section .data
-	sep dd 2
-	db ", "
+	sep defString{", "}
 
 	smsg dd 15
 	msg db "Hello, World!", 0xd, 0xa,0
+
+	error_code_msg defString{"An error has occured: code "}
 
 
 	foo defString{"Foo "}
 
 	bar defString{"Bar", 0xd, 0xa}
-
-	dd 12
-	marker_msg db "Marker Hit", 0xd, 0xa
-	dd 14
-	marker1_msg db "Marker 1 Hit", 0xd, 0xa
-	dd 14
-	marker2_msg db "Marker 2 Hit", 0xd, 0xa
 
 	def_ext dd 0
 
@@ -36,54 +30,6 @@ global main
 
 
 
-handleerror:
-	call _GetLastError@0	;	Get the error code
-	push eax
-
-	call _ExitProcess@4
-
-marker:
-	push eax
-	push ecx
-	push edx
-	push 0
-	push written
-	push dword [marker_msg-4]
-	push marker_msg
-	push dword [stdout]
-	call _WriteConsoleA@20
-	pop edx
-	pop ecx
-	pop eax
-	ret
-marker1:
-	push eax
-	push ecx
-	push edx
-	push 0
-	push written
-	push dword [marker1_msg-4]
-	push marker1_msg
-	push dword [stdout]
-	call _WriteConsoleA@20
-	pop edx
-	pop ecx
-	pop eax
-	ret
-marker2:
-	push eax
-	push ecx
-	push edx
-	push 0
-	push written
-	push dword [marker2_msg-4]
-	push marker2_msg
-	push dword [stdout]
-	call _WriteConsoleA@20
-	pop edx
-	pop ecx
-	pop eax
-	ret
 
 
 main:
@@ -94,7 +40,8 @@ main:
 	mov eax, smsg
 	call cout
 
-
+	getString eax, "Test 1", endl, "Test 2", endl
+	call cout
 										;	The real program starts
 
 	mov eax, smsg

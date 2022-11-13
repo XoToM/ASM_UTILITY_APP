@@ -1,14 +1,16 @@
 %ifndef __STD_IO
 %define __STD_IO 1
 
-%include "std.asm"
+%ifndef __STD
+	%include "std.asm"
+%endif
 
-section .bss
+section .data
 	global stdout
 	global stdin
-	written resd 0
-	stdout resd 0
-	stdin resd 0
+	written dd 0
+	stdout dd 0
+	stdin dd 0
 
 section .text
 	extern _GetStdHandle@4
@@ -18,7 +20,7 @@ section .text
 	global __init_stdio__
 
 	__init_stdio__:
-				;Set up the handles for the heap, as well as the standard Input and Output
+				;Set up the handles for the standard Input and Output
 			push dword -11
 			call _GetStdHandle@4
 			mov [stdout], eax
