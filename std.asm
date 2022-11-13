@@ -2,9 +2,11 @@
 
 %define __STD 1
 
-%ifndef __STD_IO
-	%include "std.asm"
-%endif
+
+%include "std_string.asm"
+%include "stdio.asm"
+
+
 
 section .data
 	heap dd 0
@@ -21,7 +23,8 @@ section .text
 	global mfree
 	global mrealloc
 	global mresize
-	
+	global handleerror
+
 	__init__:
 		call _GetProcessHeap@0
 		mov [heap], eax
@@ -44,10 +47,7 @@ section .text
 			cmp eax, 0
 			jnz .return
 
-			call _GetLastError@0	;	In case of an error get the error code and shutdown the program.
-			push eax
-			call _ExitProcess@4
-			ret
+			call handleerror
 
 		.return:
 			pop dword [eax]				;	Store the size of the allocation in the first 4 bytes of the allocation, then move the memory pointer by 4 bytes forward. Return the new pointer
@@ -69,9 +69,7 @@ section .text
 			cmp eax, 0
 			jnz .return
 
-			call _GetLastError@0	;	In case of an error get the error code and shutdown the program.
-			push eax
-			call _ExitProcess@4
+			call handleerror
 
 		.return:
 			mov eax, 0
@@ -110,10 +108,7 @@ section .text
 			jnz .return
 
 
-			call _GetLastError@0	;	In case of an error get the error code and shutdown the program.
-			push eax
-			call _ExitProcess@4
-			ret
+			call handleerror
 
 		.return:
 			sub edx, 4
@@ -131,17 +126,25 @@ section .text
 			push eax
 			call _ExitProcess@4
 			ret
-	
-	
+
+
 	handleerror:				;	Prints the error code of the last error then closes this program with this error code.
 			call _GetLastError@0	;	Get the error code
 			push eax
 
-			mov eax, error_code_msg
+			getString eax, "An error has occured: code "
 			call snew
 			mov edx, dword [esp]
 			call sappend_int
-			call cout				;	Print out an error message
+			call sappend_endl
+										;	Print out an error message
+			push 0
+			push 0
+			push dword [eax]
+			add eax, 4
+			push eax
+			push dword [stdout]
+			call _WriteConsoleA@20
 
 			call _ExitProcess@4		;	Exit with the error code
 

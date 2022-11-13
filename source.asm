@@ -2,6 +2,8 @@ bits 32
 default rel
 
 %include "std_string.asm"
+%include "stdio.asm"
+%include "std.asm"
 
 section .data
 	sep defString{", "}
@@ -9,7 +11,6 @@ section .data
 	smsg dd 15
 	msg db "Hello, World!", 0xd, 0xa,0
 
-	error_code_msg defString{"An error has occured: code "}
 
 
 	foo defString{"Foo "}
@@ -20,12 +21,6 @@ section .data
 
 section .text
 global main
-
-
-
-
-
-
 
 
 
@@ -43,6 +38,21 @@ main:
 	getString eax, "Test 1", endl, "Test 2", endl
 	call cout
 										;	The real program starts
+
+	mov eax, 0
+	mov ebx, esp
+	mov eax, 0
+	call snew
+	call cout
+
+	sub ebx, esp
+
+	getString eax, "Stack offset: "
+	call snew
+	mov edx, ebx
+	call sappend_int
+	call sappend_endl
+	call cout
 
 	mov eax, smsg
 
@@ -75,7 +85,7 @@ main:
 	mov edx, ebx
 	inc ebx
 	call sappend_int
-	mov edx, sep
+	getString edx, "	=> "
 	call sappend
 	pop edx
 	call sappend_int
@@ -92,8 +102,22 @@ main:
 
 	call mfree
 
+	getString eax, "Input some text: "
+	call cout
 
-	;Return the exit code and exit
-	mov eax, dword [def_ext]
-	push eax
+	mov eax, 0
+	call snew
+
+	mov edx, 0
+	call cin
+
+	mov edx, eax
+	getString eax, endl, "You typed in: "
+	call snew
+	call sappend
+	call sappend_endl
+	call cout
+
+	;Return a successfull exit code and exit
+	push dword 0;123456789
 	call _ExitProcess@4

@@ -1,28 +1,13 @@
 %ifndef __STD_STRING
 %define __STD_STRING 1
 
+%include "std_string_macro.asm"
+
 %include "std.asm"
 %include "stdio.asm"
 
-%macro defString 1+
-.length:
-	dd %%endtext - %%starttext
-.data:
-	%%starttext: db %1
-.eof:
-	%%endtext: db 0
-%endmacro
-%macro getString 2+
-	[SECTION .data]
-		%%string:
-			dd %%endtext - %%starttext
-			%%starttext: db %2
-			%%endtext: db 0
-	__?SECT?__
-		mov %1, %%string
-%endmacro
 
-%define endl 0xd, 0xa
+
 section .data
 	CONST_MINUS_SYM db "-"
 	CONST_NUMERICS defString{"0123456789ABCDEF"}
@@ -142,7 +127,7 @@ section .text
 			pop edx
 			cmp edx, 0
 			jns .not_signed
-			mov al, byte [CONST_MINUS_SYM]
+			mov al, '-'
 			mov byte [esi], al
 			dec esi
 			inc edi

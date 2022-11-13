@@ -35,6 +35,7 @@ section .text
 			push ecx
 			push eax
 			push 0
+
 			push written
 			push dword [eax]
 			add eax, 4
@@ -44,15 +45,59 @@ section .text
 
 			cmp eax, 0
 			jnz .return
-			call _GetLastError@0	;	In case of an error get the error code and shutdown the program.
-			push eax
-			call _ExitProcess@4
-			ret
+			call handleerror
 
 		.return:
 			pop eax
 			pop ecx
 			pop edx
+			ret
+
+extern _ReadFile@20
+
+
+	stream_read:			;	EAX stores pointer to str, EBX stores stream handle, EDX stores max byte count (or 0)
+			push ecx
+			push ebx
+
+			push eax
+			push 0
+			mov ecx, esp
+
+			cmp edx, 0
+			jnz .mbytes
+			mov edx, dword [eax-4]
+			sub edx, 4
+		.mbytes:
+
+			push 0
+			push ecx
+			push edx
+			add eax, 4
+			push eax
+			push ebx
+			call _ReadFile@20
+
+			cmp eax, 0
+			jnz .exit
+			call handleerror
+		.exit:
+
+			pop ecx
+			pop eax
+
+			mov dword [eax], ecx
+
+			pop ebx
+			pop ecx
+			ret
+
+
+	cin:
+			push ebx
+			mov ebx, dword [stdin]
+			call stream_read
+			pop ebx
 			ret
 
 %endif
