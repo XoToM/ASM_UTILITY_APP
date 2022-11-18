@@ -109,14 +109,45 @@ main:
 	call snew
 
 	mov edx, 0
-	call cin
+	call cin			
 
 	mov edx, eax
+	push edx
 	getString eax, endl, "You typed in: "
 	call snew
 	call sappend
 	call sappend_endl
 	call cout
+	
+	pop edx
+	push edx
+	getString eax, "It is "
+	call snew
+	mov edx, [edx]
+	call sappend_int
+	getString edx, " bytes long.", endl
+	call sappend
+	call cout
+
+	pop edx
+
+	mov al, 'a'
+	call sfind_char
+	cmp eax, dword -1
+
+	je .notfound
+.found:
+	mov edx, eax
+	getString eax, "There is an 'a' in the string at position "
+	call snew
+	call sappend_int
+	call sappend_endl
+	call cout
+	jmp .fexit
+.notfound:
+	getString eax, "There is no 'a' in this string."
+	call cout
+.fexit:
 
 	;Return a successfull exit code and exit
 	push dword 0;123456789

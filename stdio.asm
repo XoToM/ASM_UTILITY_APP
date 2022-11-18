@@ -93,7 +93,7 @@ extern _ReadFile@20
 			ret
 
 
-	cin:
+	cin:				;	reading from stdin while its in line mode appears to add in an endl at the end of the input
 			push ebx
 			mov ebx, dword [stdin]
 			call stream_read
