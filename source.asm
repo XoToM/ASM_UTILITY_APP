@@ -23,9 +23,62 @@ section .text
 global main
 
 
+sappend_price:	;	Appends the price in EDX to the string in EAX. Both EDX and EAX remain unchanged
+	push ebx
+	push ecx
+	push edx
 
+	mov ebx, edx
+	
+	mov ecx, 100
+	DIVMOD ebx, ecx, ecx
 
+	getString edx, 156
+	call sappend
 
+	mov edx, ebx
+	call sappend_int
+
+	mov edx, ecx
+	add edx, 100
+	call sappend_int
+
+	mov edx, eax
+	add edx, dword [eax]
+	add edx, 1
+	mov byte [edx], '.' 
+
+	pop edx
+	pop ecx
+	pop ebx
+	ret
+
+testallansi:
+	getString eax, "ANSI Test"
+	call snew
+	call cout
+	mov edx, 0
+.loop:
+	mov dword [eax], 0
+	call sappend_int
+	
+	push edx
+	getString edx, " = w"
+	call sappend
+	pop edx
+
+	mov ecx, eax
+	add ecx, dword [eax]
+	add ecx, 3
+	mov byte [ecx], dl
+	call sappend_endl
+	call cout
+	inc dx
+	cmp dl, 0
+	jne .loop
+	call mfree
+	getString eax, "Test"
+	ret
 
 main:
 
@@ -128,6 +181,7 @@ main:
 	getString edx, " bytes long.", endl
 	call sappend
 	call cout
+	
 
 	pop edx
 
@@ -145,9 +199,18 @@ main:
 	call cout
 	jmp .fexit
 .notfound:
-	getString eax, "There is no 'a' in this string."
+	getString eax, "There is no 'a' in this string.", endl
 	call cout
 .fexit:
+
+	getString eax, "Test: "
+	call snew
+	mov edx, 9999999
+
+	call sappend_price
+	call cout
+
+	;call testallansi	;	Display all ANSI characters and their codes
 
 	;Return a successfull exit code and exit
 	push dword 0;123456789

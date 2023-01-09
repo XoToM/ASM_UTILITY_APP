@@ -6,6 +6,37 @@
 %include "std_string.asm"
 %include "stdio.asm"
 
+%macro DIVIDE 2
+	push eax
+	push edx
+	mov eax, %1
+	xor edx, edx
+	div %2
+	mov %1, eax
+	pop edx
+	pop eax
+%endmacro
+%macro MODULUS 2
+	push eax
+	push edx
+	mov eax, %1
+	xor edx, edx
+	div %2
+	mov %1, edx
+	pop edx
+	pop eax
+%endmacro
+%macro DIVMOD 3
+	push eax
+	push edx
+	mov eax, %1
+	xor edx, edx
+	div %2
+	mov %1, eax
+	mov %3, edx
+	pop edx
+	pop eax
+%endmacro
 
 
 section .data
