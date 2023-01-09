@@ -6,7 +6,7 @@
 %include "std_string.asm"
 %include "stdio.asm"
 
-%macro DIVIDE 2
+%macro DIVIDE 2		;	Divide the number in %1 by the number in %2. Numbers have to be registers, and cannot be EAX or EDX. Result is stored in %1
 	push eax
 	push edx
 	mov eax, %1
@@ -16,7 +16,7 @@
 	pop edx
 	pop eax
 %endmacro
-%macro MODULUS 2
+%macro MODULUS 2	;	Take the Modulus of the number in %1 by the number in %2. Numbers have to be registers, and cannot be EAX or EDX. Result is stored in %1
 	push eax
 	push edx
 	mov eax, %1
@@ -26,7 +26,7 @@
 	pop edx
 	pop eax
 %endmacro
-%macro DIVMOD 3
+%macro DIVMOD 3	;	Divide and take the Modulus of the number in %1 by the number in %2. Numbers have to be registers, and cannot be EAX or EDX. Result of the division is stored in %1 and the modulus is stored in %3
 	push eax
 	push edx
 	mov eax, %1
