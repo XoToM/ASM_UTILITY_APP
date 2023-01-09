@@ -19,6 +19,30 @@ section .data
 
 	def_ext dd 0
 
+	%macro MachineSlotEntry 3
+		.nameptr:
+		dd %1
+		.price:
+		dd %2
+		.maxcount:
+		dd %3
+		.count:
+		dd %3
+	%endmacro
+	
+	machine_slots_names:
+		.oreo defString{"Oreo"}
+		.pringles defString{"Pringles"}
+		.mars defString{"Mars"}
+		.gbread defString{"Green bread"}
+	machine_slots:
+	.a1: MachineSlotEntry machine_slots_names.oreo, 200
+	.a2: MachineSlotEntry machine_slots_names.pringles, 250
+	
+	.b1: MachineSlotEntry machine_slots_names.mars, 100
+	.b2: MachineSlotEntry machine_slots_names.gbread, 2999
+
+
 section .text
 global main
 
@@ -52,6 +76,8 @@ sappend_price:	;	Appends the price in EDX to the string in EAX. Both EDX and EAX
 	pop ecx
 	pop ebx
 	ret
+displaycoins:
+
 
 testallansi:
 	getString eax, "ANSI Test"
@@ -205,7 +231,7 @@ main:
 
 	getString eax, "Test: "
 	call snew
-	mov edx, 9999999
+	mov edx, 90100
 
 	call sappend_price
 	call cout
