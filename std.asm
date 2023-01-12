@@ -50,11 +50,11 @@ section .text
 	extern _HeapFree@12
 	extern _HeapReAlloc@16
 
-	global malloc
-	global mfree
-	global mrealloc
-	global mresize
-	global handleerror
+	;global malloc
+	;global mfree
+	;global mrealloc
+	;global mresize
+	;global handleerror
 
 	__init__:
 		call _GetProcessHeap@0
@@ -158,7 +158,10 @@ section .text
 			call _ExitProcess@4
 			ret
 
-
+	tryhandleerror:
+		add eax, 0
+		jz handleerror
+		ret
 	handleerror:				;	Prints the error code of the last error then closes this program with this error code.
 			call _GetLastError@0	;	Get the error code
 			push eax

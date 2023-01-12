@@ -6,6 +6,11 @@
 .eof:
 	%%endtext: db 0
 %endmacro
+%macro rawDefString 1+
+	dd %%endtext - %%starttext
+	%%starttext: db %1
+	%%endtext: db 0
+%endmacro
 
 %macro getString 2+
 	[SECTION .data]

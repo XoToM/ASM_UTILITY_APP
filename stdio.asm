@@ -16,8 +16,8 @@ section .text
 	extern _GetStdHandle@4
 	extern _WriteConsoleA@20
 
-	global cout
-	global __init_stdio__
+	;global cout
+	;global __init_stdio__
 
 	__init_stdio__:
 				;Set up the handles for the standard Input and Output
