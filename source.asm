@@ -30,8 +30,11 @@ section .data
 		dd %3
 	%endmacro
 	
-	machine_slot_x_address defString{"1234"}
-	machine_slot_y_address defString{"abcd"}
+	machine_slot_x_address1 defString{"1234"}
+	machine_slot_y_address1 defString{"ABCD"}
+	machine_slot_x_address2 defString{ 0x31, 0x32, 0x33, 0x34}
+	machine_slot_y_address2 defString{ 0x41, 0x42, 0x43, 0x44}
+	
 	machine_slots_names:
 		.oreo: rawDefString{"Oreo"}
 		.pringles: rawDefString{"Pringles"}

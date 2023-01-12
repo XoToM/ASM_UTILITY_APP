@@ -156,7 +156,7 @@ section .text
 		pop edx
 		ret		
 
-	sfind_char:					;	Find and return the position of the character AL inside the string in EDX. EAX will contain the position of the first occurence of the character if it is found, -1 if it is not found.
+	sfind_char:					;	Find and return the position of the character AL inside the string in EDX. EAX will contain the index of the first occurence of the character if it is found, -1 if it is not found.
 			push ecx
 			push edi
 
