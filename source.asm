@@ -38,12 +38,13 @@ section .data
 		.mars: rawDefString{"Mars"}
 		.gbread: rawDefString{"Green bread"}
 	machine_slots:
-	MachineSlotEntry machine_slots_names.oreo, 200, 1
+	MachineSlotEntry machine_slots_names.oreo, 200, 3
 	MachineSlotEntry machine_slots_names.pringles, 250, 1
 
 	MachineSlotEntry machine_slots_names.mars, 100, 1
 	MachineSlotEntry machine_slots_names.gbread, 2999, 1
-
+	machine_slots_end:
+	machine_slots_size: dd 4
 	console_input_key_event:	;18
 		.type:
 			dw 0	;	Should be 0x0001 for key event
@@ -95,18 +96,18 @@ do_keypad:
 	;pop eax
 	
 
-	getString eax, "Input Event "
-	call snew
+	;getString eax, "Input Event "
+	;call snew
 
 	;call sappend_int
 	;call sappend_endl
 
 	xor edx, edx
 	mov dx, word [console_input_key_event.type]
-	call sappend_int
-	call sappend_endl
-	call cout
-	call mfree
+	;call sappend_int
+	;call sappend_endl
+	;call cout
+	;call mfree
 	cmp dx, 0x0001
 	jne .get_inp
 
@@ -138,6 +139,44 @@ do_keypad:
 	pop eax
 	ret
 
+
+print_all_items:
+	push eax
+	push edx
+	push ecx
+	getString eax, "We got the following items: ", endl
+	call snew
+
+	xor ecx, ecx
+	.loop:
+	shl ecx, 1
+	mov edx, dword [machine_slots + ecx*8]
+	call sappend
+	mov dl, ' '
+	call sappend_char
+	mov edx, dword [machine_slots+4 + ecx*8]
+	call sappend_price
+	getString edx, " x"
+	call sappend
+	mov edx, dword [machine_slots+12 + ecx*8]
+	call sappend_int
+	mov dl, '/'
+	call sappend_char
+	mov edx, dword [machine_slots+8 + ecx*8]
+	call sappend_int
+	call sappend_endl
+	shr ecx, 1
+
+	inc ecx
+	cmp ecx, dword [machine_slots_size]
+	jl .loop
+
+	call cout
+	call mfree
+	pop ecx
+	pop edx
+	pop eax
+	ret
 
 sappend_price:	;	Appends the price in EDX to the string in EAX. Both EDX and EAX remain unchanged
 	push ebx
@@ -223,6 +262,7 @@ main:
 
 	sub ebx, esp
 
+	call print_all_items
 	call do_keypad		;	INPUT TEST
 
 	getString eax, "Stack offset: "
