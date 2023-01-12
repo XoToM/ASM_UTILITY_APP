@@ -125,7 +125,7 @@ do_keypad:
 	mov byte [edx], cl
 
 	xor edx, edx
-	mov dx, word [console_input_key_event.char]
+	mov dx, word [console_input_key_event.keycode]
 	call sappend_int
 	call sappend_endl
 	call cout
@@ -210,11 +210,16 @@ main:
 	call cout
 										;	The real program starts
 
-	mov eax, 0
-	mov ebx, esp
-	mov eax, 0
+	;mov eax, 0
+	getString eax, "The char of the day is '"
 	call snew
+	mov dl, 'E'
+	call sappend_char
+	mov dl, "'"
+	call sappend_char
+	call sappend_endl
 	call cout
+	call mfree
 
 	sub ebx, esp
 
