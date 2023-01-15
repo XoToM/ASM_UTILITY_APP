@@ -29,12 +29,12 @@ section .data
 		;.count:	12
 		dd %3
 	%endmacro
-	
+
 	machine_slot_x_address1 defString{"1234"}
 	machine_slot_y_address1 defString{"ABCD"}
 	machine_slot_x_address2 defString{ 0x31, 0x32, 0x33, 0x34}
 	machine_slot_y_address2 defString{ 0x41, 0x42, 0x43, 0x44}
-	
+
 	machine_slots_names:
 		.oreo: rawDefString{"Oreo"}
 		.pringles: rawDefString{"Pringles"}
@@ -74,16 +74,7 @@ extern _ReadConsoleInputA@16
 
 global main
 
-do_keypad:
-	push eax
-	push edx
-	push ecx
-	enter 4, 0		;	0-EventCountRead
-
-.get_inp:
-	;getString eax, "Step A", endl
-	;call cout
-
+get_keypress:
 	push console_input_key_event_count
 	push dword 1
 	push console_input_key_event
@@ -92,28 +83,23 @@ do_keypad:
 
 	mov edx, eax
 	call tryhandleerror
+	mov al, [console_input_key_event.keycode]
+	ret
 
-	;push eax
-	;getString eax, "Step B", endl
-	;call cout
-	;pop eax
-	
+test_keypad:
+	push eax
+	push edx
+	push ecx
+	enter 4, 0		;	0-EventCountRead
+.get_inp:
 
-	;getString eax, "Input Event "
-	;call snew
-
-	;call sappend_int
-	;call sappend_endl
+	call get_keypress
 
 	xor edx, edx
 	mov dx, word [console_input_key_event.type]
-	;call sappend_int
-	;call sappend_endl
-	;call cout
-	;call mfree
+	
 	cmp dx, 0x0001
 	jne .get_inp
-
 .kev_process:
 	mov eax, dword [console_input_key_event.keydown]
 	add eax, eax
@@ -142,6 +128,116 @@ do_keypad:
 	pop eax
 	ret
 
+do_keypad:
+	
+	enter 4, 0
+	mov dword [ebp], 0
+	
+	.test_last_key:;	bl = keycount,	 bh = key
+		cmp byte [ebp], 0
+		jz .zero_keys
+
+		mov bh, byte [ebp]
+
+		cmp byte [ebp+1], 0
+		jz .one_key
+
+		.two_keys:
+			mov bl, 2
+			mov bh, byte [ebp+1]
+			jmp .test_last_key_done
+		.one_key:
+			mov bl, 1
+			mov bh, byte [ebp]
+			jmp .test_last_key_done
+		.zero_keys:
+			mov bx, 0
+			jmp .test_last_key_done
+
+	.test_last_key_done:
+
+
+	.removekey:
+		cmp byte [console_input_key_event.keycode], 0x08
+		jne .removekey_done
+
+		push ebx
+		push eax
+		push edx
+		xor edx, edx
+		mov dl, bl
+		dec dl
+
+		jns .np1
+		mov dl, 0
+		.np1:
+
+		mov byte [ebp+edx], 0
+		getString eax, 0x08
+		call cout
+		pop edx
+		pop eax
+		pop ebx
+		;ret
+		.removekey_done:
+
+
+	.addkey:
+		push ebx
+		push eax
+		push edx
+		cmp bl, 2
+		je .addkey_done
+
+		cmp bh, 0
+		jg .xaxis
+			.yaxis:
+				mov edx, machine_slot_y_address2				;	Compare
+				mov al, byte [console_input_key_event.keycode]
+				call sfind_char
+				cmp eax, -1										;	Check result
+				jne .yaxis_yes									;	If found process
+				cmp bh, 0										;	If not found check if mode is 0
+				je .xaxis										;	If mode 0 go to x axis
+				jmp .addkey_done								;	Otherwise exit.
+			.yaxis_yes:
+				xor edx, edx
+				mov dl, byte [machine_slot_y_address1 + 4 + eax]	;	Get the result char from keycode
+				xor eax, eax
+				call snew										;	Print char in console
+				call sappend_char
+				call cout
+				call mfree
+				xor eax, eax
+				mov al, dl										;	Store char in eax
+				jmp .addkey_done								;	Exit
+			.xaxis:
+				mov edx, machine_slot_x_address2
+				mov al, byte [console_input_key_event.keycode]
+				call sfind_char
+				cmp eax, -1
+				jne .xaxis_yes
+				jmp .addkey_done
+			.xaxis_yes:
+				xor edx, edx
+				mov dl, byte [machine_slot_x_address1 + 4 + eax]	;	Get the result char from keycode
+				xor eax, eax
+				call snew										;	Print char in console
+				call sappend_char
+				call cout
+				call mfree
+				xor eax, eax
+				mov al, dl										;	Store char in eax
+				jmp .addkey_done								;	Exit
+		.addkey_done:
+		;	EAX has ascii char if the keycode is valid, -1 otherwise
+		pop edx
+		pop eax
+		pop ebx
+
+	leave
+
+	ret
 
 print_all_items:
 	push eax

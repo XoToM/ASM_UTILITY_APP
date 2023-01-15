@@ -51,7 +51,6 @@ section .text
 			ret
 
 
-
 	sappend:					;	Appends the string in EDX to the string in EAX. Returns the new string
 			push ecx
 			push edx
