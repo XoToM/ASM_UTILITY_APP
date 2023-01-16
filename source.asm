@@ -290,7 +290,7 @@ do_keypad:
 		call print_slot
 
 
-	;call marker
+	call marker
 
 	push eax
 	getString eax, endl
@@ -300,7 +300,31 @@ do_keypad:
 	ret
 
 get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot data in EAX	
+	push ecx
+	push ebx
 	push edx
+	xor eax, eax
+	mov ebx, eax
+
+	;call marker
+	
+	mov edx, machine_slot_y_address1
+	mov al, bl
+	call sfind_char
+	call marknum
+	;call marker
+	mov bl, al
+	xor edx, edx
+	mov dl, al
+	call marknum
+
+	mov edx, machine_slot_y_address1
+	mov al, bh
+	call sfind_char
+	mov bh, al
+	xor edx, edx
+	mov dl, al
+	call marknum
 
 	xor edx, edx
 	mov dl, ah
@@ -310,6 +334,8 @@ get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot d
 
 	mov eax, edx
 	pop edx
+	pop ebx
+	pop ecx
 	ret
 print_slot:			;	Prints information about item in machine slot. Pointer in EAX stores points to slot info
 	push ecx
@@ -317,6 +343,8 @@ print_slot:			;	Prints information about item in machine slot. Pointer in EAX st
 	push edx
 
 	mov ecx, eax
+	xor eax, eax
+	call snew
 
 	shl ecx, 1
 	mov edx, dword [machine_slots + ecx*8]
@@ -335,6 +363,7 @@ print_slot:			;	Prints information about item in machine slot. Pointer in EAX st
 	call sappend_int
 	call sappend_endl
 	shr ecx, 1
+
 
 	pop edx
 	pop eax
@@ -437,11 +466,22 @@ testallansi:
 
 marker:
 	push eax
-	getString eax, "Marker"
+	getString eax, "Marker", endl
 	call cout
 	pop eax
 	ret
-
+marknum:
+	push eax
+	push edx
+	xor eax, eax
+	call snew
+	call sappend_int
+	call sappend_endl
+	call cout
+	call mfree
+	pop edx
+	pop eax
+	ret
 
 main:
 
