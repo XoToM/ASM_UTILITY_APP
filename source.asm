@@ -41,7 +41,7 @@ section .data
 		.mars: rawDefString{"Mars"}
 		.gbread: rawDefString{"Green bread"}
 	machine_slots:
-	MachineSlotEntry machine_slots_names.oreo, 200, 3
+	MachineSlotEntry machine_slots_names.oreo, 300, 3
 	MachineSlotEntry machine_slots_names.pringles, 250, 1
 
 	MachineSlotEntry machine_slots_names.mars, 100, 1
@@ -68,6 +68,8 @@ section .data
 	dd 0	;	Padding
 	console_input_key_event_count:
 		dd 0	;	Garbage?
+	keypressbuffer:
+		dd 0
 
 section .text
 extern _ReadConsoleInputA@16
@@ -129,33 +131,53 @@ test_keypad:
 	ret
 
 do_keypad:
+	push ecx
+	mov dword [keypressbuffer], 0
 	
-	enter 4, 0
-	mov dword [ebp], 0
-	
+
 	.test_last_key:;	bl = keycount,	 bh = key
-		cmp byte [ebp], 0
+		cmp byte [keypressbuffer], 0
 		jz .zero_keys
 
-		mov bh, byte [ebp]
+		mov bh, byte [keypressbuffer]
 
-		cmp byte [ebp+1], 0
+		cmp byte [keypressbuffer+1], 0
 		jz .one_key
 
 		.two_keys:
 			mov bl, 2
-			mov bh, byte [ebp+1]
+			mov bh, byte [keypressbuffer+1]
 			jmp .test_last_key_done
 		.one_key:
 			mov bl, 1
-			mov bh, byte [ebp]
+			mov bh, byte [keypressbuffer]
 			jmp .test_last_key_done
 		.zero_keys:
 			mov bx, 0
 			jmp .test_last_key_done
 
-	.test_last_key_done:
+		.test_last_key_done:
 
+	.get_key:
+		push ecx
+		push EAX
+
+		.get_key_retry:
+		push console_input_key_event_count
+		push dword 1
+		push console_input_key_event
+		push dword [stdin]
+		call _ReadConsoleInputA@16
+		call tryhandleerror
+
+		cmp word [console_input_key_event.type], 0x0001
+		jnz .get_key_retry
+		cmp dword [console_input_key_event.keydown], 0
+		jz .get_key_retry
+
+		.get_key_done:
+			pop eax
+			pop ecx
 
 	.removekey:
 		cmp byte [console_input_key_event.keycode], 0x08
@@ -171,9 +193,9 @@ do_keypad:
 		jns .np1
 		mov dl, 0
 		.np1:
+		mov byte [keypressbuffer+edx], 0
 
-		mov byte [ebp+edx], 0
-		getString eax, 0x08
+		getString eax, 0x08, ' ', 0x08
 		call cout
 		pop edx
 		pop eax
@@ -210,7 +232,7 @@ do_keypad:
 				call mfree
 				xor eax, eax
 				mov al, dl										;	Store char in eax
-				jmp .addkey_done								;	Exit
+				jmp .addkey_write								;	Exit
 			.xaxis:
 				mov edx, machine_slot_x_address2
 				mov al, byte [console_input_key_event.keycode]
@@ -228,17 +250,96 @@ do_keypad:
 				call mfree
 				xor eax, eax
 				mov al, dl										;	Store char in eax
-				jmp .addkey_done								;	Exit
+				neg al
+				jmp .addkey_write								;	Exit
+		.addkey_write:
+		;	EAX has ascii char if the keycode is valid, -1 otherwise
+			;mov edx, 4
+			;sub dl, bl
+			xor edx, edx
+			mov dl, bl
+			mov byte [keypressbuffer+edx], al
+
 		.addkey_done:
 		;	EAX has ascii char if the keycode is valid, -1 otherwise
+		
+
 		pop edx
 		pop eax
 		pop ebx
+		
+	cmp bl, 2
+	jne .test_last_key
+	cmp byte [console_input_key_event.keycode], 0x0D
+	jne .test_last_key
 
-	leave
+	.get_index:
+		mov cl, byte [keypressbuffer+1]
+		cmp byte [keypressbuffer], cl
+		jl .get_index_ls1
+		.get_index_gr1:
+			mov al, byte [keypressbuffer+1]
+			mov ah, byte [keypressbuffer]
+			jmp .get_index_dne1
+		.get_index_ls1:
+			mov al, byte [keypressbuffer]
+			mov ah, byte [keypressbuffer+1]
+		.get_index_dne1:
+			neg al
+		call get_slot_by_id
+		call print_slot
 
+
+	;call marker
+
+	push eax
+	getString eax, endl
+	call cout
+	pop eax
+	pop ecx
 	ret
 
+get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot data in EAX	
+	push edx
+
+	xor edx, edx
+	mov dl, ah
+	sal edx, 2
+	add dl, al
+	sal edx, 4
+
+	mov eax, edx
+	pop edx
+	ret
+print_slot:			;	Prints information about item in machine slot. Pointer in EAX stores points to slot info
+	push ecx
+	push eax
+	push edx
+
+	mov ecx, eax
+
+	shl ecx, 1
+	mov edx, dword [machine_slots + ecx*8]
+	call sappend
+	mov dl, ' '
+	call sappend_char
+	mov edx, dword [machine_slots+4 + ecx*8]
+	call sappend_price
+	getString edx, " x"
+	call sappend
+	mov edx, dword [machine_slots+12 + ecx*8]
+	call sappend_int
+	mov dl, '/'
+	call sappend_char
+	mov edx, dword [machine_slots+8 + ecx*8]
+	call sappend_int
+	call sappend_endl
+	shr ecx, 1
+
+	pop edx
+	pop eax
+	pop ecx
+	ret
 print_all_items:
 	push eax
 	push edx
@@ -312,7 +413,7 @@ testallansi:
 	call snew
 	call cout
 	mov edx, 0
-.loop:
+	.loop:
 	mov dword [eax], 0
 	call sappend_int
 	
@@ -334,9 +435,17 @@ testallansi:
 	getString eax, "Test"
 	ret
 
+marker:
+	push eax
+	getString eax, "Marker"
+	call cout
+	pop eax
+	ret
 
 
 main:
+
+	mov ebp, esp
 
 	call __init__
 
@@ -362,7 +471,10 @@ main:
 	sub ebx, esp
 
 	call print_all_items
-	call do_keypad		;	INPUT TEST
+	
+
+	.tttloop: call do_keypad		;	INPUT TEST
+	;jmp .tttloop
 
 	getString eax, "Stack offset: "
 	call snew

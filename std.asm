@@ -38,7 +38,6 @@
 	pop eax
 %endmacro
 
-
 section .data
 	heap dd 0
 
