@@ -40,12 +40,42 @@ section .data
 		.pringles: rawDefString{"Pringles"}
 		.mars: rawDefString{"Mars"}
 		.gbread: rawDefString{"Green bread"}
+		
+		.water: rawDefString{"Water"}
+		.beer: rawDefString{"Beer"}
+		.batteries: rawDefString{"AA Batteries"}
+		.racoon: rawDefString{"Literally a racoon"}
+
+		.rpaint: rawDefString{"Red Paint"}
+		.bpaint: rawDefString{"Blue Paint"}
+		.gpaint: rawDefString{"Green Paint"}
+		.vmachine: rawDefString{"Vending Machine"}
+		
+		.tpacket: rawDefString{"Packet of tissues"}
+		.myphone: rawDefString{"MyPhone 5 Max"}
+		.chalk: rawDefString{"Black chalk"}
+		.oxygen: rawDefString{"oxygen gas (container not included)"}
 	machine_slots:
 	MachineSlotEntry machine_slots_names.oreo, 300, 3
 	MachineSlotEntry machine_slots_names.pringles, 250, 1
-
 	MachineSlotEntry machine_slots_names.mars, 100, 1
 	MachineSlotEntry machine_slots_names.gbread, 2999, 1
+
+	MachineSlotEntry machine_slots_names.water, 199, 3
+	MachineSlotEntry machine_slots_names.beer, 850, 1
+	MachineSlotEntry machine_slots_names.batteries, 100, 4
+	MachineSlotEntry machine_slots_names.racoon, 0, 1
+
+	MachineSlotEntry machine_slots_names.rpaint, 123, 8
+	MachineSlotEntry machine_slots_names.bpaint, 456, 8
+	MachineSlotEntry machine_slots_names.gpaint, 789, 8
+	MachineSlotEntry machine_slots_names.vmachine, 4242, 1
+
+	MachineSlotEntry machine_slots_names.tpacket, 159, 8
+	MachineSlotEntry machine_slots_names.myphone, 99999, 1
+	MachineSlotEntry machine_slots_names.chalk, 50, 10
+	MachineSlotEntry machine_slots_names.oxygen, 1000, 9999
+
 	machine_slots_end:
 	machine_slots_size: dd 4
 	console_input_key_event:	;18
@@ -273,6 +303,11 @@ do_keypad:
 	cmp byte [console_input_key_event.keycode], 0x0D
 	jne .test_last_key
 
+	push eax
+	getString eax, endl
+	call cout
+	pop eax
+
 	.get_index:
 		mov cl, byte [keypressbuffer+1]
 		cmp byte [keypressbuffer], cl
@@ -290,12 +325,9 @@ do_keypad:
 		call print_slot
 
 
-	call marker
+	;call marker
 
-	push eax
-	getString eax, endl
-	call cout
-	pop eax
+	
 	pop ecx
 	ret
 
@@ -303,19 +335,17 @@ get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot d
 	push ecx
 	push ebx
 	push edx
-	xor eax, eax
 	mov ebx, eax
+	xor eax, eax
 
 	;call marker
 	
-	mov edx, machine_slot_y_address1
+	mov edx, machine_slot_x_address1
 	mov al, bl
 	call sfind_char
-	call marknum
-	;call marker
 	mov bl, al
 	xor edx, edx
-	mov dl, al
+	mov dl, bl
 	call marknum
 
 	mov edx, machine_slot_y_address1
@@ -323,16 +353,17 @@ get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot d
 	call sfind_char
 	mov bh, al
 	xor edx, edx
-	mov dl, al
+	mov dl, bh
 	call marknum
 
 	xor edx, edx
-	mov dl, ah
+	mov dl, bh
 	sal edx, 2
-	add dl, al
+	add dl, bl
 	sal edx, 4
 
 	mov eax, edx
+	call marknum
 	pop edx
 	pop ebx
 	pop ecx
@@ -346,24 +377,23 @@ print_slot:			;	Prints information about item in machine slot. Pointer in EAX st
 	xor eax, eax
 	call snew
 
-	shl ecx, 1
-	mov edx, dword [machine_slots + ecx*8]
+	mov edx, dword [machine_slots + ecx]
 	call sappend
 	mov dl, ' '
 	call sappend_char
-	mov edx, dword [machine_slots+4 + ecx*8]
+	mov edx, dword [machine_slots+4 + ecx]
 	call sappend_price
 	getString edx, " x"
 	call sappend
-	mov edx, dword [machine_slots+12 + ecx*8]
+	mov edx, dword [machine_slots+12 + ecx]
 	call sappend_int
 	mov dl, '/'
 	call sappend_char
-	mov edx, dword [machine_slots+8 + ecx*8]
+	mov edx, dword [machine_slots+8 + ecx]
 	call sappend_int
 	call sappend_endl
-	shr ecx, 1
-
+	call cout
+	call mfree
 
 	pop edx
 	pop eax
