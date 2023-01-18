@@ -77,7 +77,7 @@ section .data
 	MachineSlotEntry machine_slots_names.oxygen, 1000, 9999
 
 	machine_slots_end:
-	machine_slots_size: dd 4
+	machine_slots_size: dd (machine_slots_end-machine_slots)/16
 	console_input_key_event:	;18
 		.type:
 			dw 0	;	Should be 0x0001 for key event
@@ -408,6 +408,24 @@ print_all_items:
 
 	xor ecx, ecx
 	.loop:
+
+	push ebx
+	push edx
+	push ecx
+	xor edx, edx
+	
+	DIVMOD ecx, dword [machine_slot_x_address1], ebx
+	mov dl, byte [machine_slot_y_address1+4 + ecx]
+	call sappend_char
+	mov dl, byte [machine_slot_x_address1+4 + ebx]
+	call sappend_char
+	getString edx, " - "
+	call sappend
+
+	pop ecx
+	pop edx
+	pop ebx
+
 	shl ecx, 1
 	mov edx, dword [machine_slots + ecx*8]
 	call sappend
