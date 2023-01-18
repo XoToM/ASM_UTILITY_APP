@@ -56,25 +56,25 @@ section .data
 		.chalk: rawDefString{"Black chalk"}
 		.oxygen: rawDefString{"oxygen gas (container not included)"}
 	machine_slots:
-	MachineSlotEntry machine_slots_names.oreo, 300, 3
-	MachineSlotEntry machine_slots_names.pringles, 250, 1
-	MachineSlotEntry machine_slots_names.mars, 100, 1
-	MachineSlotEntry machine_slots_names.gbread, 2999, 1
+		MachineSlotEntry machine_slots_names.oreo, 300, 3
+		MachineSlotEntry machine_slots_names.pringles, 250, 1
+		MachineSlotEntry machine_slots_names.mars, 100, 1
+		MachineSlotEntry machine_slots_names.gbread, 2999, 1
 
-	MachineSlotEntry machine_slots_names.water, 199, 3
-	MachineSlotEntry machine_slots_names.beer, 850, 1
-	MachineSlotEntry machine_slots_names.batteries, 100, 4
-	MachineSlotEntry machine_slots_names.racoon, 0, 1
+		MachineSlotEntry machine_slots_names.water, 199, 3
+		MachineSlotEntry machine_slots_names.beer, 850, 1
+		MachineSlotEntry machine_slots_names.batteries, 100, 4
+		MachineSlotEntry machine_slots_names.racoon, 0, 1
 
-	MachineSlotEntry machine_slots_names.rpaint, 123, 8
-	MachineSlotEntry machine_slots_names.bpaint, 456, 8
-	MachineSlotEntry machine_slots_names.gpaint, 789, 8
-	MachineSlotEntry machine_slots_names.vmachine, 4242, 1
+		MachineSlotEntry machine_slots_names.rpaint, 123, 8
+		MachineSlotEntry machine_slots_names.bpaint, 456, 8
+		MachineSlotEntry machine_slots_names.gpaint, 789, 8
+		MachineSlotEntry machine_slots_names.vmachine, 4242, 1
 
-	MachineSlotEntry machine_slots_names.tpacket, 159, 8
-	MachineSlotEntry machine_slots_names.myphone, 99999, 1
-	MachineSlotEntry machine_slots_names.chalk, 50, 10
-	MachineSlotEntry machine_slots_names.oxygen, 1000, 9999
+		MachineSlotEntry machine_slots_names.tpacket, 159, 8
+		MachineSlotEntry machine_slots_names.myphone, 99999, 1
+		MachineSlotEntry machine_slots_names.chalk, 50, 10
+		MachineSlotEntry machine_slots_names.oxygen, 1000, 9999
 
 	machine_slots_end:
 	machine_slots_size: dd (machine_slots_end-machine_slots)/16
@@ -100,6 +100,20 @@ section .data
 		dd 0	;	Garbage?
 	keypressbuffer:
 		dd 0
+	coins:
+		dd 1
+		dd 2
+		dd 5
+		dd 10
+		dd 20
+		dd 50
+		dd 100
+		dd 200
+		dd 500
+		dd 1000
+		dd 2000
+		dd 5000
+		.coins_end:
 
 section .text
 extern _ReadConsoleInputA@16
@@ -123,7 +137,7 @@ test_keypad:
 	push edx
 	push ecx
 	enter 4, 0		;	0-EventCountRead
-.get_inp:
+	.get_inp:
 
 	call get_keypress
 
@@ -132,7 +146,7 @@ test_keypad:
 	
 	cmp dx, 0x0001
 	jne .get_inp
-.kev_process:
+	.kev_process:
 	mov eax, dword [console_input_key_event.keydown]
 	add eax, eax
 	jz .get_inp	;If key up then repeat
@@ -153,7 +167,7 @@ test_keypad:
 	call cout
 	call mfree
 	jmp .get_inp
-.exit:
+	.exit:
 	leave
 	pop ecx
 	pop edx
@@ -346,7 +360,7 @@ get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot d
 	mov bl, al
 	xor edx, edx
 	mov dl, bl
-	call marknum
+	;call marknum
 
 	mov edx, machine_slot_y_address1
 	mov al, bh
@@ -354,7 +368,7 @@ get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot d
 	mov bh, al
 	xor edx, edx
 	mov dl, bh
-	call marknum
+	;call marknum
 
 	xor edx, edx
 	mov dl, bh
@@ -363,7 +377,7 @@ get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot d
 	sal edx, 4
 
 	mov eax, edx
-	call marknum
+	;call marknum
 	pop edx
 	pop ebx
 	pop ecx
