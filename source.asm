@@ -35,6 +35,7 @@ section .data
 	machine_slot_x_address2 defString{ 0x31, 0x32, 0x33, 0x34}
 	machine_slot_y_address2 defString{ 0x41, 0x42, 0x43, 0x44}
 
+
 	machine_slots_names:
 		.oreo: rawDefString{"Oreo"}
 		.pringles: rawDefString{"Pringles"}
@@ -104,16 +105,24 @@ section .data
 		dd 1
 		dd 2
 		dd 5
+
 		dd 10
 		dd 20
 		dd 50
+
 		dd 100
 		dd 200
 		dd 500
-		dd 1000
-		dd 2000
-		dd 5000
-		.coins_end:
+
+		;dd 1000
+		;dd 2000
+		;dd 5000
+		.end:
+		dd 0
+		.count:
+		dd 9	;	TODO Update the coin count manually
+	coin_key_keys:defString{0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39}
+	coin_key_symbols: defString{"123456789"}
 
 section .text
 extern _ReadConsoleInputA@16
@@ -174,7 +183,7 @@ test_keypad:
 	pop eax
 	ret
 
-do_keypad:
+do_keypad:	;	Gets item id from user. Returns index to slot in EAX
 	push ecx
 	mov dword [keypressbuffer], 0
 	
@@ -311,7 +320,7 @@ do_keypad:
 		pop edx
 		pop eax
 		pop ebx
-		
+
 	cmp bl, 2
 	jne .test_last_key
 	cmp byte [console_input_key_event.keycode], 0x0D
@@ -338,10 +347,102 @@ do_keypad:
 		call get_slot_by_id
 		call print_slot
 
-
+	;	EAX should still have the slot index by now
 	;call marker
 
-	
+	pop ecx
+	ret
+
+do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EAX will contain the extra amount
+	push ecx			;	TODO: DEBUG THIS FUNCTION. There is some WILD memory corruption going on here.
+	push ebx
+	mov ecx, eax
+	xor eax, eax
+	call snew			;	EAX contains String Builder, ECX contains total to be payed
+
+	.main_loop:
+		mov dword [eax], 0	;	Clear the StringBuilder
+		push ecx
+		mov ecx, dword [coins.count]
+		.loop_display_coins:
+			mov edx, ecx
+			call sappend_int
+			getString edx, ") "
+			call sappend
+			dec ecx
+			pushf
+			mov edx, dword [coins + ecx]
+			call sappend_price
+			call sappend_endl
+			popf
+			jnz .loop_display_coins
+		pop ecx
+		getString edx, endl, "You have "
+		call sappend
+		mov edx, ecx
+		call sappend_price
+		getString edx, " left to pay. Press enter to cancel the payment, or press one of the numbers above to insert the corresponding coin.", endl
+		call sappend
+		call cout
+
+		.get_key:
+			push ecx
+			push EAX
+
+			.get_key_retry:
+				push console_input_key_event_count
+				push dword 1
+				push console_input_key_event
+				push dword [stdin]
+				call _ReadConsoleInputA@16
+				call tryhandleerror
+
+				cmp word [console_input_key_event.type], 0x0001
+				jnz .get_key_retry
+				cmp dword [console_input_key_event.keydown], 0
+				jz .get_key_retry
+
+			.get_key_done:
+				pop eax
+				pop ecx
+
+		cmp byte [console_input_key_event.keycode], 0x0D
+		jne .coin_key
+		.enter_pressed:
+			;	TODO Return all inserted keys here
+			jmp .exit
+
+		.coin_key:	;	Read which key was pressed and insert the appropriate coin.
+			push eax		;	Look up the key in the key list
+			mov edx, coin_key_keys
+			mov al, byte[console_input_key_event.keycode]
+			call sfind_char
+			mov edx, eax
+			pop eax
+
+			cmp edx, -1
+			je .get_key		;	Wait for another key if its not found
+
+			mov ebx, dword [coins + edx*4]	;	Get the worth of this coin
+
+			mov dword [eax], 0	;	Clear the StringBuilder
+			getString edx, "You inserted "
+			call sappend
+			mov edx, ebx
+			call sappend_price
+			call sappend_endl
+			call cout			;	Print the message to screen
+
+			sub ecx, ebx	;	Subtract the coin from the price
+			jg .main_loop	;	If we still need to pay something restart this loop
+
+	mov eax, ecx
+	jz .exit
+	neg eax
+
+	.exit:
+	call mfree
+	pop ebx
 	pop ecx
 	ret
 
@@ -382,7 +483,7 @@ get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot d
 	pop ebx
 	pop ecx
 	ret
-print_slot:			;	Prints information about item in machine slot. Pointer in EAX stores points to slot info
+print_slot:			;	Prints information about item in machine slot. Index in EAX points to slot info
 	push ecx
 	push eax
 	push edx
@@ -572,11 +673,24 @@ main:
 
 	sub ebx, esp
 
-	call print_all_items
-	
 
-	.tttloop: call do_keypad		;	INPUT TEST
-	;jmp .tttloop
+	.tttloop: call print_all_items
+
+	call do_keypad		;	INPUT TEST
+	shl eax, 1
+	mov eax, dword[machine_slots+4 + eax*8]
+	call do_coin_input
+
+	push eax
+	getString eax, "Return: "
+	call snew
+	pop edx
+	call sappend_price
+	call sappend_endl
+	call cout
+	call mfree
+
+	jmp .tttloop
 
 	getString eax, "Stack offset: "
 	call snew

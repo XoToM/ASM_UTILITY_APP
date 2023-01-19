@@ -153,7 +153,7 @@ section .text
 		call sappend
 		leave
 		pop edx
-		ret		
+		ret	
 
 	sfind_char:					;	Find and return the position of the character AL inside the string in EDX. EAX will contain the index of the first occurence of the character if it is found, -1 if it is not found.
 			push ecx
