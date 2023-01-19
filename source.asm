@@ -354,6 +354,7 @@ do_keypad:	;	Gets item id from user. Returns index to slot in EAX
 	ret
 
 do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EAX will contain the extra amount
+	push edx
 	push ecx			;	TODO: DEBUG THIS FUNCTION. There is some WILD memory corruption going on here.
 	push ebx
 	mov ecx, eax
@@ -371,7 +372,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			call sappend
 			dec ecx
 			pushf
-			mov edx, dword [coins + ecx]
+			mov edx, dword [coins + ecx*4]
 			call sappend_price
 			call sappend_endl
 			popf
@@ -436,14 +437,16 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			sub ecx, ebx	;	Subtract the coin from the price
 			jg .main_loop	;	If we still need to pay something restart this loop
 
+	call markfree
+	call marker
 	mov eax, ecx
 	jz .exit
 	neg eax
 
 	.exit:
-	call mfree
 	pop ebx
 	pop ecx
+	pop edx
 	ret
 
 get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot data in EAX	
@@ -529,6 +532,8 @@ print_all_items:
 	push ecx
 	xor edx, edx
 	
+	;REGINFO ecx
+
 	DIVMOD ecx, dword [machine_slot_x_address1], ebx
 	mov dl, byte [machine_slot_y_address1+4 + ecx]
 	call sappend_char
@@ -536,6 +541,9 @@ print_all_items:
 	call sappend_char
 	getString edx, " - "
 	call sappend
+	call cout
+	call mfree
+	call snew
 
 	pop ecx
 	pop edx
@@ -564,7 +572,9 @@ print_all_items:
 	jl .loop
 
 	call cout
+	;call marknumeax
 	call mfree
+	;call marker
 	pop ecx
 	pop edx
 	pop eax
@@ -633,6 +643,13 @@ marker:
 	call cout
 	pop eax
 	ret
+markfree:
+	push eax
+	getString eax, "Mark FREE", endl
+	call cout
+	pop eax
+	call mfree
+	ret
 marknum:
 	push eax
 	push edx
@@ -646,6 +663,11 @@ marknum:
 	pop eax
 	ret
 
+	push eax
+	getString eax, "Marker", endl
+	call cout
+	pop eax
+	ret
 main:
 
 	mov ebp, esp
@@ -672,7 +694,6 @@ main:
 	call mfree
 
 	sub ebx, esp
-
 
 	.tttloop: call print_all_items
 

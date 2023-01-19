@@ -38,6 +38,22 @@
 	pop eax
 %endmacro
 
+;%macro REGINFO 1					;	School computers have bitdefender installed. Bitdefender has an amazing ratio of 90% false positives, so this super useful macro cannot be used. Why does this macro get the program marked as malware while doing this exact same thing by hand doesn't? Ask bitdefender.
+;	%defstr _reginfoname %1
+;	push eax
+;	push edx
+;	mov edx, %1
+;	getString eax, "Register status: ", _reginfoname, " - "
+;	call snew
+;	call sappend_int
+;	call sappend_endl
+;	call cout
+;	call markfree
+;	pop edx
+;	pop eax
+;	ret
+;%endmacro
+
 section .data
 	heap dd 0
 
@@ -90,19 +106,24 @@ section .text
 	mfree:						;	Frees allocated memory. EAX stores pointer to said memory.
 			push edx
 			push ecx
+
 			sub eax, 4
+
 			push eax
 			push dword 0
 			push dword [heap]
 			call _HeapFree@12		;	Free up the allocated memory
 
-			cmp eax, 0
-			jnz .return
+			
+			;call marker
 
-			call handleerror
+			;cmp eax, 0
+			;jnz .return
+
+			call tryhandleerror
 
 		.return:
-			mov eax, 0
+			xor eax, eax
 			pop ecx
 			pop edx
 			ret
