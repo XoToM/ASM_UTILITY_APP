@@ -365,6 +365,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 
 	.main_loop:
 		mov dword [eax], 0	;	Clear the StringBuilder
+		push edi
 		push ecx
 		mov ecx, dword [coins.count]
 		.loop_display_coins:
@@ -383,6 +384,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			popf
 			jnz .loop_display_coins
 		pop ecx
+		pop edi
 
 		push edi
 		getString edx, endl, "You have "
@@ -424,7 +426,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 
 			mov eax, edi		;	If the user canceled the transaction return the amount the user inserted
 			sub eax, ecx
-			call do_coin_return			;	How to reproduce the get rich quick bug: Select the Oreos (A1), then insert 2 pounds, then cancel the transaction by pressing enter. You should now be rich.
+			call do_coin_return
 
 			xor eax, eax
 			jmp .exit
@@ -776,12 +778,12 @@ main:
 	call do_coin_input
 
 	mov edx, eax
-	getString eax, "Return: "
-	call snew
-	call sappend_price
-	call sappend_endl
-	call cout
-	call mfree
+	;getString eax, "Return: "
+	;call snew
+	;call sappend_price
+	;call sappend_endl
+	;call cout
+	;call mfree
 
 	mov eax, edx
 	call do_coin_return
