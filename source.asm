@@ -375,6 +375,9 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			mov edx, dword [coins + ecx*4]
 			call sappend_price
 			call sappend_endl
+			call cout
+			call mfree
+			call snew
 			popf
 			jnz .loop_display_coins
 		pop ecx
@@ -385,6 +388,8 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 		getString edx, " left to pay. Press enter to cancel the payment, or press one of the numbers above to insert the corresponding coin.", endl
 		call sappend
 		call cout
+		call mfree
+		call snew
 
 		.get_key:
 			push ecx
@@ -448,6 +453,8 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 	pop ecx
 	pop edx
 	ret
+
+
 
 get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot data in EAX	
 	push ecx
@@ -532,7 +539,7 @@ print_all_items:
 	push ecx
 	xor edx, edx
 	
-	;REGINFO ecx
+
 
 	DIVMOD ecx, dword [machine_slot_x_address1], ebx
 	mov dl, byte [machine_slot_y_address1+4 + ecx]
@@ -653,6 +660,7 @@ markfree:
 marknum:
 	push eax
 	push edx
+	mov edx, eax
 	xor eax, eax
 	call snew
 	call sappend_int
@@ -698,8 +706,8 @@ main:
 	.tttloop: call print_all_items
 
 	call do_keypad		;	INPUT TEST
-	shl eax, 1
-	mov eax, dword[machine_slots+4 + eax*8]
+	;call marknum
+	mov eax, dword[machine_slots+4 + eax]
 	call do_coin_input
 
 	push eax
