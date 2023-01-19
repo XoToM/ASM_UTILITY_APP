@@ -454,7 +454,50 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 	pop edx
 	ret
 
+do_coin_return:	;	Returns the amount specified in EAX as coins (printing to console). If EAX is 0 this acts as NOP
+	push eax
+	push edx
+	push ecx
+	push ebx
+	push edi
+	
+	mov edi, dword [coins.count]
+	.main_loop:
+		cmp eax, 0
+		jz .exit
 
+		dec edi
+		mov ebx, eax
+		DIVIDE ebx, dword[coins+edi*4]
+		cmp ebx, 0
+		jz .print_end
+		push eax
+		getString eax, "You got "
+		call snew
+		mov edx, ebx
+		call sappend_int
+		getString edx, " x "
+		call sappend
+		mov edx, dword[coins+edi*4]
+		call sappend_price
+		call sappend_endl
+		call cout
+		call mfree
+		pop eax
+		.print_end:
+		MULTIPLY ebx, dword[coins+edi*4]		;	TODO: Make a macro for Multiplication
+		sub eax, ebx
+	cmp edi, 0
+	jg .main_loop
+
+	
+	.exit:
+	pop edi
+	pop ebx
+	pop ecx
+	pop edx
+	pop eax
+	ret
 
 get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot data in EAX	
 	push ecx
