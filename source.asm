@@ -355,11 +355,13 @@ do_keypad:	;	Gets item id from user. Returns index to slot in EAX
 
 do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EAX will contain the extra amount
 	push edx
-	push ecx			;	TODO: DEBUG THIS FUNCTION. There is some WILD memory corruption going on here.
+	push ecx
 	push ebx
 	mov ecx, eax
 	xor eax, eax
 	call snew			;	EAX contains String Builder, ECX contains total to be payed
+	
+	mov edi, ecx
 
 	.main_loop:
 		mov dword [eax], 0	;	Clear the StringBuilder
@@ -381,6 +383,8 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			popf
 			jnz .loop_display_coins
 		pop ecx
+
+		push edi
 		getString edx, endl, "You have "
 		call sappend
 		mov edx, ecx
@@ -411,15 +415,22 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			.get_key_done:
 				pop eax
 				pop ecx
+		pop edi
 
 		cmp byte [console_input_key_event.keycode], 0x0D
 		jne .coin_key
 		.enter_pressed:
-			;	TODO Return all inserted keys here
 			call mfree
+
+			mov eax, edi		;	If the user canceled the transaction return the amount the user inserted
+			sub eax, ecx
+			call do_coin_return			;	How to reproduce the get rich quick bug: Select the Oreos (A1), then insert 2 pounds, then cancel the transaction by pressing enter. You should now be rich.
+
+			xor eax, eax
 			jmp .exit
 
 		.coin_key:	;	Read which key was pressed and insert the appropriate coin.
+			push edi
 			push eax		;	Look up the key in the key list
 			mov edx, coin_key_keys
 			mov al, byte[console_input_key_event.keycode]
@@ -428,7 +439,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			pop eax
 
 			cmp edx, -1
-			je .get_key		;	Wait for another key if its not found
+			je .get_key		;	Wait for another key if its not found. EDI should still be on top of the stack
 
 			mov ebx, dword [coins + edx*4]	;	Get the worth of this coin
 
@@ -441,6 +452,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			call cout			;	Print the message to screen
 
 			sub ecx, ebx	;	Subtract the coin from the price
+			pop edi
 			jg .main_loop	;	If we still need to pay something restart this loop
 	.loop_exit:
 	call mfree
