@@ -37,6 +37,16 @@
 	pop edx
 	pop eax
 %endmacro
+%macro MULTIPLY 2		;	Divide the number in %1 by the number in %2. Numbers have to be registers, and cannot be EAX or EDX. Result is stored in %1
+	push eax
+	push edx
+	mov eax, %1
+	mov edx, %2
+	mul %2
+	mov %1, eax
+	pop edx
+	pop eax
+%endmacro
 
 ;%macro REGINFO 1					;	School computers have bitdefender installed. Bitdefender has an amazing ratio of 90% false positives, so this super useful macro cannot be used. Why does this macro get the program marked as malware while doing this exact same thing by hand doesn't? Ask bitdefender.
 ;	%defstr _reginfoname %1
@@ -136,10 +146,11 @@ section .text
 			ret
 		.work:
 			push eax
-			add edx, [eax-4]
+			add edx, dword [eax-4]
 			mov eax, edx
 			shr eax, 1
 			add edx, eax
+			add edx, 4			;	Very basic workaround to an edge case bug which prevents any memory from getting allocated when the requested increase is 1. This should also reduce the amount of mrealloc system calls, as every call should give it 4 extra bytes
 			pop eax
 			;	Let the execution continue into mrealloc
 	mrealloc:					;	Reallocates a memory block, changing its size. Pointer to the memory is stored in EAX, the new size is in EDX. The new pointer is stored in EAX. EDX remains unchanged.

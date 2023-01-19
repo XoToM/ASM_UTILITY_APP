@@ -416,6 +416,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 		jne .coin_key
 		.enter_pressed:
 			;	TODO Return all inserted keys here
+			call mfree
 			jmp .exit
 
 		.coin_key:	;	Read which key was pressed and insert the appropriate coin.
@@ -441,10 +442,11 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 
 			sub ecx, ebx	;	Subtract the coin from the price
 			jg .main_loop	;	If we still need to pay something restart this loop
-
-	call markfree
-	call marker
+	.loop_exit:
+	call mfree
+	;call marker
 	mov eax, ecx
+	cmp eax, 0
 	jz .exit
 	neg eax
 
@@ -460,7 +462,7 @@ do_coin_return:	;	Returns the amount specified in EAX as coins (printing to cons
 	push ecx
 	push ebx
 	push edi
-	
+
 	mov edi, dword [coins.count]
 	.main_loop:
 		cmp eax, 0
@@ -471,18 +473,25 @@ do_coin_return:	;	Returns the amount specified in EAX as coins (printing to cons
 		DIVIDE ebx, dword[coins+edi*4]
 		cmp ebx, 0
 		jz .print_end
+		
 		push eax
+		
+		push edi
 		getString eax, "You got "
 		call snew
 		mov edx, ebx
 		call sappend_int
 		getString edx, " x "
 		call sappend
+		pop edi
 		mov edx, dword[coins+edi*4]
+		push edi
 		call sappend_price
 		call sappend_endl
 		call cout
 		call mfree
+		pop edi
+
 		pop eax
 		.print_end:
 		MULTIPLY ebx, dword[coins+edi*4]		;	TODO: Make a macro for Multiplication
@@ -490,7 +499,7 @@ do_coin_return:	;	Returns the amount specified in EAX as coins (printing to cons
 	cmp edi, 0
 	jg .main_loop
 
-	
+
 	.exit:
 	pop edi
 	pop ebx
@@ -744,23 +753,26 @@ main:
 	call cout
 	call mfree
 
-	sub ebx, esp
+	;sub ebx, esp
 
 	.tttloop: call print_all_items
 
 	call do_keypad		;	INPUT TEST
 	;call marknum
+	mov ebx, eax
 	mov eax, dword[machine_slots+4 + eax]
 	call do_coin_input
 
-	push eax
+	mov edx, eax
 	getString eax, "Return: "
 	call snew
-	pop edx
 	call sappend_price
 	call sappend_endl
 	call cout
 	call mfree
+
+	mov eax, edx
+	call do_coin_return
 
 	jmp .tttloop
 

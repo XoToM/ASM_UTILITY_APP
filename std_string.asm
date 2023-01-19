@@ -51,7 +51,7 @@ section .text
 			ret
 
 
-	sappend:					;	Appends the string in EDX to the string in EAX. Returns the new string
+	sappend:					;	Appends the string in EDX to the string in EAX. Returns the new string. EDI and ESI don't get saved
 			push ecx
 			push edx
 			push eax
