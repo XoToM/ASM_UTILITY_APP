@@ -6,16 +6,6 @@ default rel
 %include "std.asm"
 
 section .data
-	sep defString{", "}
-
-	smsg dd 15
-	msg db "Hello, World!", 0xd, 0xa,0
-
-
-
-	foo defString{"Foo "}
-
-	bar defString{"Bar", 0xd, 0xa}
 
 	def_ext dd 0
 
@@ -696,7 +686,6 @@ wait_key:
 	ret
 
 main:
-
 	mov ebp, esp
 
 	call __init__
