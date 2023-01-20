@@ -65,10 +65,11 @@ section .data
 		;	Row 4
 		MachineSlotEntry machine_slots_names.tpacket, 159, 8
 		MachineSlotEntry machine_slots_names.myphone, 99999, 1
-		MachineSlotEntry machine_slots_names.chalk, 50, 10
+		;MachineSlotEntry machine_slots_names.chalk, 50, 10
+		MachineSlotEntry 0, 0, 0
 		MachineSlotEntry machine_slots_names.oxygen, 1000, 9999
 		machine_slots_end:	;	Label used to calculate the number of items
-		machine_slots_size: dd (machine_slots_end-machine_slots)/16		;	The number of items this machine has. All the items in here will be displayed. Set the name pointer to 0 to make the slot empty.
+		machine_slots_size: dd (machine_slots_end-machine_slots)/16		;	The number of items this machine has. All the items in here will be displayed. Set all fields (including name pointer) to 0 to make the slot empty.
 
 	console_input_key_event:	;	Used for reading keyboard keys
 		.type:
@@ -536,6 +537,10 @@ print_slot:			;	Prints information about item in machine slot. Index in EAX poin
 	push edx
 
 	mov ecx, eax
+
+	cmp dword [machine_slots + ecx], 0	;	If the slot is empty we can skip it
+	je .exit
+
 	xor eax, eax
 	call snew
 
@@ -557,6 +562,7 @@ print_slot:			;	Prints information about item in machine slot. Index in EAX poin
 	call cout
 	call mfree
 
+	.exit:
 	pop edx
 	pop eax
 	pop ecx
@@ -570,55 +576,57 @@ print_all_items:
 
 	xor ecx, ecx
 	.loop:
+		push ebx		;	Check if the slot is empty, skip it if it is
+		mov ebx, ecx
+		shl ebx, 1
+		cmp dword [machine_slots + ebx*8], 0
+		pop ebx
+		je .skip_slot
 
-	push ebx
-	push edx
-	push ecx
-	xor edx, edx
-	
+		push ebx		;	Print out all the information about the slot in a readable way
+		push edx
+		push ecx
+		xor edx, edx
 
+		DIVMOD ecx, dword [machine_slot_x_address1], ebx
+		mov dl, byte [machine_slot_y_address1+4 + ecx]
+		call sappend_char
+		mov dl, byte [machine_slot_x_address1+4 + ebx]
+		call sappend_char
+		getString edx, " - "
+		call sappend
+		call cout
+		call mfree
+		call snew
 
-	DIVMOD ecx, dword [machine_slot_x_address1], ebx
-	mov dl, byte [machine_slot_y_address1+4 + ecx]
-	call sappend_char
-	mov dl, byte [machine_slot_x_address1+4 + ebx]
-	call sappend_char
-	getString edx, " - "
-	call sappend
-	call cout
-	call mfree
-	call snew
+		pop ecx
+		pop edx
+		pop ebx
 
-	pop ecx
-	pop edx
-	pop ebx
-
-	shl ecx, 1
-	mov edx, dword [machine_slots + ecx*8]
-	call sappend
-	mov dl, ' '
-	call sappend_char
-	mov edx, dword [machine_slots+4 + ecx*8]
-	call sappend_price
-	getString edx, " x"
-	call sappend
-	mov edx, dword [machine_slots+12 + ecx*8]
-	call sappend_int
-	mov dl, '/'
-	call sappend_char
-	mov edx, dword [machine_slots+8 + ecx*8]
-	call sappend_int
-	call sappend_endl
-	shr ecx, 1
-
-	inc ecx
-	cmp ecx, dword [machine_slots_size]
+		shl ecx, 1
+		mov edx, dword [machine_slots + ecx*8]
+		call sappend
+		mov dl, ' '
+		call sappend_char
+		mov edx, dword [machine_slots+4 + ecx*8]
+		call sappend_price
+		getString edx, " x"
+		call sappend
+		mov edx, dword [machine_slots+12 + ecx*8]
+		call sappend_int
+		mov dl, '/'
+		call sappend_char
+		mov edx, dword [machine_slots+8 + ecx*8]
+		call sappend_int
+		call sappend_endl
+		shr ecx, 1
+		.skip_slot:	;	Increment the slot number
+		inc ecx
+	cmp ecx, dword [machine_slots_size]	;	If we looped through all slots we can exit
 	jl .loop
 
 	call cout
-	;call marknumeax
 	call mfree
-	;call marker
 	pop ecx
 	pop edx
 	pop eax
