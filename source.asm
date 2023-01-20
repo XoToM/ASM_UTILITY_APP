@@ -141,48 +141,6 @@ get_keypress:
 	mov al, [console_input_key_event.keycode]
 	ret
 
-test_keypad:
-	push eax
-	push edx
-	push ecx
-	enter 4, 0		;	0-EventCountRead
-	.get_inp:
-
-	call get_keypress
-
-	xor edx, edx
-	mov dx, word [console_input_key_event.type]
-	
-	cmp dx, 0x0001
-	jne .get_inp
-	.kev_process:
-	mov eax, dword [console_input_key_event.keydown]
-	add eax, eax
-	jz .get_inp	;If key up then repeat
-
-	getString eax, "Key Down '#' code: "
-	call snew
-
-	mov cx, word [console_input_key_event.char]
-
-	mov edx, eax
-	add edx, 14
-	mov byte [edx], cl
-
-	xor edx, edx
-	mov dx, word [console_input_key_event.keycode]
-	call sappend_int
-	call sappend_endl
-	call cout
-	call mfree
-	jmp .get_inp
-	.exit:
-	leave
-	pop ecx
-	pop edx
-	pop eax
-	ret
-
 do_keypad:	;	Gets item id from user. Returns index to slot in EAX or -1 if cancelled
 	push ecx
 	mov dword [keypressbuffer], 0
@@ -737,66 +695,6 @@ wait_key:
 				pop ecx
 	ret
 
-testallansi:
-	getString eax, "ANSI Test"
-	call snew
-	call cout
-	mov edx, 0
-	.loop:
-	mov dword [eax], 0
-	call sappend_int
-	
-	push edx
-	getString edx, " = w"
-	call sappend
-	pop edx
-
-	mov ecx, eax
-	add ecx, dword [eax]
-	add ecx, 3
-	mov byte [ecx], dl
-	call sappend_endl
-	call cout
-	inc dx
-	cmp dl, 0
-	jne .loop
-	call mfree
-	getString eax, "Test"
-	ret
-
-marker:
-	push eax
-	getString eax, "Marker", endl
-	call cout
-	pop eax
-	ret
-markfree:
-	push eax
-	getString eax, "Mark FREE", endl
-	call cout
-	pop eax
-	call mfree
-	ret
-marknum:
-	push eax
-	push edx
-	mov edx, eax
-	xor eax, eax
-	call snew
-	call sappend_int
-	call sappend_endl
-	call cout
-	call mfree
-	pop edx
-	pop eax
-	ret
-
-	push eax
-	getString eax, "Marker", endl
-	call cout
-	pop eax
-	ret
-
 main:
 
 	mov ebp, esp
@@ -804,28 +702,8 @@ main:
 	call __init__
 
 
-	mov eax, smsg
-	call cout
-
-	getString eax, "Test 1", endl, "Test 2", endl
-	call cout
-										;	The real program starts
-
-	;mov eax, 0
-	getString eax, "The char of the day is '"
-	call snew
-	mov dl, 'E'
-	call sappend_char
-	mov dl, "'"
-	call sappend_char
-	call sappend_endl
-	call cout
-	call mfree
-
-	;sub ebx, esp
-
 	.tttloop: call print_all_items
-	
+
 	getString eax, "Press ESC to exit, R to restock, or type in an item code above to buy an item.", endl
 	call cout
 
@@ -870,118 +748,6 @@ main:
 		call cout
 		jmp .next_iter
 
-	getString eax, "Stack offset: "
-	call snew
-	mov edx, ebx
-	call sappend_int
-	call sappend_endl
-	call cout
-
-	mov eax, smsg
-
-	call snew
-	call cout
-
-	mov eax, foo
-	call snew
-
-	mov edx, bar
-	call sappend
-
-	mov edx, foo
-	call sappend
-
-	mov edx, -1234
-	call sappend_int
-	call sappend_endl
-
-	call cout
-
-										;	Sample fibonacci sequence (up to 99999)
-	mov ecx, 0
-	mov ebx, 1
-	mov edx, 1
-
-.fib_loop:
-	mov dword [eax], 0		;	Clear the string
-	push edx
-	mov edx, ebx
-	inc ebx
-	call sappend_int
-	getString edx, "	=> "
-	call sappend
-	pop edx
-	call sappend_int
-	call sappend_endl
-	call cout
-
-	mov edi, edx
-	mov edx, ecx
-	mov ecx, edi
-	add edx, ecx
-
-	cmp edx,  999999999
-	jl .fib_loop
-
-	call mfree
-
-	getString eax, "Input some text: "
-	call cout
-
-	mov eax, 0
-	call snew
-
-	mov edx, 0
-	call cin			
-
-	mov edx, eax
-	push edx
-	getString eax, endl, "You typed in: "
-	call snew
-	call sappend
-	call sappend_endl
-	call cout
-	
-	pop edx
-	push edx
-	getString eax, "It is "
-	call snew
-	mov edx, [edx]
-	call sappend_int
-	getString edx, " bytes long.", endl
-	call sappend
-	call cout
-	
-
-	pop edx
-
-	mov al, 'a'
-	call sfind_char
-	cmp eax, dword -1
-
-	je .notfound
-.found:
-	mov edx, eax
-	getString eax, "There is an 'a' in the string at position "
-	call snew
-	call sappend_int
-	call sappend_endl
-	call cout
-	jmp .fexit
-.notfound:
-	getString eax, "There is no 'a' in this string.", endl
-	call cout
-.fexit:
-
-	getString eax, "Test: "
-	call snew
-	mov edx, 90100
-
-	call sappend_price
-	call cout
-
-	;call testallansi	;	Display all ANSI characters and their codes
-
-	;Return a successfull exit code and exit
+	;Return a successfull exit code and exit (unreachable, but better safe than sorry)
 	push dword 0;123456789
 	call _ExitProcess@4
