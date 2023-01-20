@@ -65,7 +65,7 @@ section .data
 		MachineSlotEntry machine_slots_names.water, 199, 3
 		MachineSlotEntry machine_slots_names.beer, 850, 1
 		MachineSlotEntry machine_slots_names.batteries, 100, 4
-		MachineSlotEntry machine_slots_names.racoon, 0, 1
+		MachineSlotEntry machine_slots_names.racoon, 1, 1
 
 		MachineSlotEntry machine_slots_names.rpaint, 123, 8
 		MachineSlotEntry machine_slots_names.bpaint, 456, 8
@@ -183,7 +183,7 @@ test_keypad:
 	pop eax
 	ret
 
-do_keypad:	;	Gets item id from user. Returns index to slot in EAX
+do_keypad:	;	Gets item id from user. Returns index to slot in EAX or -1 if cancelled
 	push ecx
 	mov dword [keypressbuffer], 0
 	
@@ -256,6 +256,20 @@ do_keypad:	;	Gets item id from user. Returns index to slot in EAX
 		;ret
 		.removekey_done:
 
+	.utility_keys:
+		.utility_key_quit:
+			cmp byte [console_input_key_event.keycode], 0x1B
+			jne .utility_key_restock
+			xor eax, eax
+			call proc_exit
+		.utility_key_restock:
+			cmp byte [console_input_key_event.keycode], 0x52
+			jne .utility_keys_done
+			call restock_machine
+			pop ecx
+			mov eax, -1
+			ret
+		.utility_keys_done:
 
 	.addkey:
 		push ebx
@@ -523,6 +537,20 @@ do_coin_return:	;	Returns the amount specified in EAX as coins (printing to cons
 	pop ecx
 	pop edx
 	pop eax
+	ret
+
+restock_machine:
+	mov ecx, dword[machine_slots_size]
+	dec ecx
+	.loop:
+		shl ecx, 1
+		mov eax, dword[machine_slots+8+ecx*8]
+		mov dword[machine_slots+12+ecx*8], eax
+		shr ecx, 1
+		dec ecx
+		jns .loop
+	getString eax, "Machine has been restocked.", endl
+	call cout
 	ret
 
 get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot data in EAX	
@@ -797,8 +825,13 @@ main:
 	;sub ebx, esp
 
 	.tttloop: call print_all_items
+	
+	getString eax, "Press ESC to exit, R to restock, or type in an item code above to buy an item.", endl
+	call cout
 
 	call do_keypad		;	INPUT TEST
+	cmp eax, -1
+	je .next_iter
 	;call marknum
 	mov ebx, eax
 
