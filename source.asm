@@ -801,6 +801,10 @@ main:
 	call do_keypad		;	INPUT TEST
 	;call marknum
 	mov ebx, eax
+
+	cmp dword[machine_slots+12+ebx], 0
+	jle .out_of_stock
+
 	mov eax, dword[machine_slots+4 + ebx]
 	call do_coin_input
 
@@ -821,11 +825,17 @@ main:
 	pop edx
 	pop eax
 
+	dec dword[machine_slots+12+ebx]
+
 	call do_coin_return
 
 	.next_iter:
 	call wait_key
 	jmp .tttloop
+	.out_of_stock:
+		getString eax, "Sorry, this item is out of stock.", endl
+		call cout
+		jmp .next_iter
 
 	getString eax, "Stack offset: "
 	call snew
