@@ -314,11 +314,11 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 	push ebx
 	mov ecx, eax
 	xor eax, eax
-	call snew			;	EAX contains String Builder, ECX contains total to be payed
-
+	call snew			;	EAX contains String Builder, ECX contains total to be payed, EDI contains a copy of ECX which is used for returning coins
 	mov edi, ecx
 
 	.main_loop:
+		;	Display all coins this machine accepts
 		mov dword [eax], 0	;	Clear the StringBuilder
 		push edi
 		push ecx
@@ -341,6 +341,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 		pop ecx
 		pop edi
 
+		;	Tell the user how much they still have to pay
 		push edi
 		getString edx, endl, "You have "
 		call sappend
@@ -352,6 +353,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 		call mfree
 		call snew
 
+		;	Wait for a keypress
 		.get_key:
 			push ecx
 			push EAX
@@ -374,19 +376,19 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 				pop ecx
 		pop edi
 
-		cmp byte [console_input_key_event.keycode], 0x0D
+		cmp byte [console_input_key_event.keycode], 0x0D	;	Check what key has been [ressed]
 		jne .coin_key
-		.enter_pressed:
+		.enter_pressed:	;	Enter has been pressed, so the user wants to cancel the transaction
 			call mfree
 
 			getString eax, "Cancelled transaction", endl
-			call cout
+			call cout			;	Print a message
 
 			mov eax, edi		;	If the user canceled the transaction return the amount the user inserted
 			sub eax, ecx
-			call do_coin_return
+			call do_coin_return	;	Return the inserted amount
 
-			mov eax, -1
+			mov eax, -1		;	Return -1 to indicate that the operation was cancelled
 			jmp .exit
 
 		.coin_key:	;	Read which key was pressed and insert the appropriate coin.
@@ -416,7 +418,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 			jg .main_loop	;	If we still need to pay something restart this loop
 	.loop_exit:
 	call mfree
-	;call marker
+	
 	mov eax, ecx
 	cmp eax, 0
 	jz .exit
@@ -440,14 +442,13 @@ do_coin_return:	;	Returns the amount specified in EAX as coins (printing to cons
 		cmp eax, 0
 		jz .exit
 
-		dec edi
+		dec edi							;	Get the next coin (descending in value)
 		mov ebx, eax
-		DIVIDE ebx, dword[coins+edi*4]
+		DIVIDE ebx, dword[coins+edi*4]	;	Check how many of this coin fit in the current amount
 		cmp ebx, 0
-		jz .print_end
-		
-		push eax
-		
+		jz .print_end					;	If 0 then we can skip the printing
+
+		push eax						;	Print out how many coins just got dispensed
 		push edi
 		getString eax, "You got "
 		call snew
@@ -463,12 +464,13 @@ do_coin_return:	;	Returns the amount specified in EAX as coins (printing to cons
 		call cout
 		call mfree
 		pop edi
-
 		pop eax
+
 		.print_end:
-		MULTIPLY ebx, dword[coins+edi*4]		;	TODO: Make a macro for Multiplication
+		MULTIPLY ebx, dword[coins+edi*4]		;	Subtract the dispensed coins from the total
 		sub eax, ebx
-	cmp edi, 0
+	
+	cmp edi, 0				;	If we ran out of coins we cna dispense we can safely exit the loop
 	jg .main_loop
 
 
@@ -480,17 +482,17 @@ do_coin_return:	;	Returns the amount specified in EAX as coins (printing to cons
 	pop eax
 	ret
 
-restock_machine:
+restock_machine:	;	Restock all slots of the machine
 	mov ecx, dword[machine_slots_size]
 	dec ecx
-	.loop:
+	.loop:				;	Iterate throuhg all the slots and reset the current item count to its maximum value
 		shl ecx, 1
 		mov eax, dword[machine_slots+8+ecx*8]
 		mov dword[machine_slots+12+ecx*8], eax
 		shr ecx, 1
 		dec ecx
 		jns .loop
-	getString eax, "Machine has been restocked.", endl
+	getString eax, "Machine has been restocked.", endl		;	Print a message then exit
 	call cout
 	ret
 
@@ -502,28 +504,28 @@ get_slot_by_id:		;	Gets machine slot stored in AX and returns an index to slot d
 	xor eax, eax
 
 
-	mov edx, machine_slot_x_address1
+	mov edx, machine_slot_x_address1	;	Get the column of the item
 	mov al, bl
 	call sfind_char
 	mov bl, al
 	xor edx, edx
 	mov dl, bl
 
-	mov edx, machine_slot_y_address1
+	mov edx, machine_slot_y_address1	;	Get the row of the item
 	mov al, bh
 	call sfind_char
 	mov bh, al
 	xor edx, edx
 	mov dl, bh
 
-	xor edx, edx
+	xor edx, edx					;	Do some basic maths to convert the row and column into an index into the slot table
 	mov dl, bh
 	sal edx, 2
 	add dl, bl
 	sal edx, 4
 
 	mov eax, edx
-	
+
 	pop edx
 	pop ebx
 	pop ecx
@@ -658,16 +660,16 @@ wait_key:
 			push eax
 
 			.get_key_retry:
-				push console_input_key_event_count
+				push console_input_key_event_count	;	Wait for a console event
 				push dword 1
 				push console_input_key_event
 				push dword [stdin]
 				call _ReadConsoleInputA@16
 				call tryhandleerror
 
-				cmp word [console_input_key_event.type], 0x0001
+				cmp word [console_input_key_event.type], 0x0001		;	If the event is not a key event or of its an event for lifting the key we should wait for 1 more event
 				jnz .get_key_retry
-				cmp dword [console_input_key_event.keydown], 0
+				cmp dword [console_input_key_event.keydown], 0	
 				jz .get_key_retry
 
 			.get_key_done:
@@ -676,36 +678,34 @@ wait_key:
 	ret
 
 main:
-	mov ebp, esp
-
+	mov ebp, esp			;	Initialize the stack, the IO and the Heap
 	call __init__
 
 
-	.tttloop: call print_all_items
+	.main_loop: call print_all_items			;	Print all items to the user
 
 	getString eax, "Press ESC to exit, R to restock, or type in an item code above to buy an item.", endl
-	call cout
+	call cout			;	Tell the user how to use this program
 
-	call do_keypad		;	INPUT TEST
+	call do_keypad		;	Get an item code from the user
 	cmp eax, -1
-	je .next_iter
-	;call marknum
+	je .next_iter		;	If the user did not input an item code we restart this loop
 	mov ebx, eax
 
 	cmp dword[machine_slots+12+ebx], 0
-	jle .out_of_stock
+	jle .out_of_stock						;	Check if the requested item is in stock
 
 	mov eax, dword[machine_slots+4 + ebx]
-	call do_coin_input
+	call do_coin_input						;	Wait for the user to pay for the item
 
 	cmp eax, -1
-	je .next_iter
+	je .next_iter						;	Check if the user cancelled the transaction
 
 	mov edx, eax
 
 	push eax
 	push edx
-	getString eax, "You got "
+	getString eax, "You got "			;	Tell the user that they got the item
 	call snew
 	mov edx, dword[machine_slots + ebx]
 	call sappend
@@ -715,17 +715,18 @@ main:
 	pop edx
 	pop eax
 
-	dec dword[machine_slots+12+ebx]
+	dec dword[machine_slots+12+ebx]		;	Decrement the amount of this item that is in stock
 
-	call do_coin_return
+	call do_coin_return					;	Give back change to the user
 
-	.next_iter:
+	.next_iter:						;	Wait for a key press from the user then restart this loop
 	call wait_key
-	jmp .tttloop
-	.out_of_stock:
+	jmp .main_loop
+
+	.out_of_stock:			;	Print out a message informing the user the requested item is not in stock
 		getString eax, "Sorry, this item is out of stock.", endl
 		call cout
-		jmp .next_iter
+		jmp .next_iter	;	Restart the loop
 
 	;Return a successfull exit code and exit (unreachable, but better safe than sorry)
 	push dword 0;123456789
