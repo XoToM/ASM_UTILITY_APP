@@ -391,7 +391,7 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 		call sappend
 		mov edx, ecx
 		call sappend_price
-		getString edx, " left to pay. Press enter to cancel the payment, or press one of the numbers above to insert the corresponding coin.", endl
+		getString edx, " left to pay. Press enter to cancel the payment, or press one of the numbers above to insert the corresponding coin.", endl, endl
 		call sappend
 		call cout
 		call mfree
@@ -424,11 +424,14 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 		.enter_pressed:
 			call mfree
 
+			getString eax, "Cancelled transaction", endl
+			call cout
+
 			mov eax, edi		;	If the user canceled the transaction return the amount the user inserted
 			sub eax, ecx
 			call do_coin_return
 
-			xor eax, eax
+			mov eax, -1
 			jmp .exit
 
 		.coin_key:	;	Read which key was pressed and insert the appropriate coin.
@@ -683,6 +686,29 @@ sappend_price:	;	Appends the price in EDX to the string in EAX. Both EDX and EAX
 	pop ebx
 	ret
 
+wait_key:
+	.get_key:
+			push ecx
+			push eax
+
+			.get_key_retry:
+				push console_input_key_event_count
+				push dword 1
+				push console_input_key_event
+				push dword [stdin]
+				call _ReadConsoleInputA@16
+				call tryhandleerror
+
+				cmp word [console_input_key_event.type], 0x0001
+				jnz .get_key_retry
+				cmp dword [console_input_key_event.keydown], 0
+				jz .get_key_retry
+
+			.get_key_done:
+				pop eax
+				pop ecx
+	ret
+
 testallansi:
 	getString eax, "ANSI Test"
 	call snew
@@ -742,6 +768,7 @@ marknum:
 	call cout
 	pop eax
 	ret
+
 main:
 
 	mov ebp, esp
@@ -774,20 +801,30 @@ main:
 	call do_keypad		;	INPUT TEST
 	;call marknum
 	mov ebx, eax
-	mov eax, dword[machine_slots+4 + eax]
+	mov eax, dword[machine_slots+4 + ebx]
 	call do_coin_input
 
-	mov edx, eax
-	;getString eax, "Return: "
-	;call snew
-	;call sappend_price
-	;call sappend_endl
-	;call cout
-	;call mfree
+	cmp eax, -1
+	je .next_iter
 
-	mov eax, edx
+	mov edx, eax
+
+	push eax
+	push edx
+	getString eax, "You got "
+	call snew
+	mov edx, dword[machine_slots + ebx]
+	call sappend
+	call sappend_endl
+	call cout
+	call mfree
+	pop edx
+	pop eax
+
 	call do_coin_return
 
+	.next_iter:
+	call wait_key
 	jmp .tttloop
 
 	getString eax, "Stack offset: "
