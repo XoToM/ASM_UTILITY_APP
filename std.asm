@@ -48,7 +48,7 @@
 	pop eax
 %endmacro
 
-;%macro REGINFO 1					;	School computers have bitdefender installed. Bitdefender has an amazing ratio of 90% false positives, so this super useful macro cannot be used. Why does this macro get the program marked as malware while doing this exact same thing by hand doesn't? Ask bitdefender.
+;%macro REGINFO 1					;	School computers have bitdefender installed. Bitdefender has an amazing ratio of detecting 99.9% false positives, so this super useful macro cannot be used. Why does this macro get the program marked as malware while doing this exact same thing by hand doesn't? Ask bitdefender.
 ;	%defstr _reginfoname %1
 ;	push eax
 ;	push edx
