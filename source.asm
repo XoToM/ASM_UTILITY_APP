@@ -376,8 +376,10 @@ do_coin_input:	;	Handles Coin Input. EAX contains the price to pay. On return EA
 				pop eax
 				pop ecx
 		pop edi
-
-		cmp byte [console_input_key_event.keycode], 0x0D	;	Check what key has been [ressed]
+		
+		cmp byte [console_input_key_event.keycode], 0x1B	;	Check what key has been [pressed]
+		je .enter_pressed
+		cmp byte [console_input_key_event.keycode], 0x0D	;	Check what key has been [pressed]
 		jne .coin_key
 		.enter_pressed:	;	Enter has been pressed, so the user wants to cancel the transaction
 			call mfree
