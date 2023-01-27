@@ -1,6 +1,8 @@
 # Assembly Utility App
  
 A simple vending machine program written in assembly.
+This version is different from the c++ version. It doesn't use any c/c++ standard library funcions, instead I wrote replacement functions for performing basic tasks.
+These functions probably use different win32 functions than the ones in the c/c++ standard library, meaning that this app differs quite a bit from my c++ version of the utility app.
 
 ## Compilation
 You need to have NASM installed to compile this program. https://www.nasm.us/
