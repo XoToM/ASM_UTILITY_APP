@@ -1,6 +1,6 @@
-# Assembly Utility App
+# Assembly Vending Machine App
  
-A simple vending machine program written in assembly.
+A simple vending machine program written in assembly. I've made it for fun as an addition to one of my university projects.
 This version is different from the c++ version. It doesn't use any c/c++ standard library funcions, instead I wrote replacement functions for performing basic tasks.
 These functions probably use different win32 functions than the ones in the c/c++ standard library, meaning that this app differs quite a bit from my c++ version of the utility app.
 
